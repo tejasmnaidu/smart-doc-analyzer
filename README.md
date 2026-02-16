@@ -4,6 +4,7 @@ An AI-powered web app to upload documents (PDFs/images), extract text (OCR), gen
 
 🔗 **Live Demo:**  
 https://smart-doc-analyzer-orjhyexeamyoydwnuaufdj.streamlit.app/
+Note:Image analysis works only locally ,not in cloud. Because streamlit doesn't support pytesseract. 
 
 ---
 
@@ -76,4 +77,5 @@ The model uses the document text as **context**, so different files produce diff
 ```bash
 git clone https://github.com/tejasmnaidu/smart-doc-analyzer.git
 cd smart-doc-analyzer
+
 
