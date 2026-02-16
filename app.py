@@ -2,7 +2,6 @@ import streamlit as st
 import pdfplumber
 import pytesseract
 from PIL import Image
-import io
 import os
 from transformers import pipeline
 
@@ -15,12 +14,19 @@ st.title("📄 Smart Document Analyzer")
 st.caption("Upload PDF or Image → Extract Text → Summarize → Ask Questions")
 
 # -------------------------
-# Tesseract Path (Windows)
+# Detect Streamlit Cloud
 # -------------------------
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+def is_streamlit_cloud():
+    return os.environ.get("STREAMLIT_SERVER_HEADLESS") == "true"
 
 # -------------------------
-# Load models safely
+# Tesseract Path (Local Windows only)
+# -------------------------
+if not is_streamlit_cloud():
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# -------------------------
+# Load models (cached)
 # -------------------------
 @st.cache_resource
 def load_models():
@@ -44,37 +50,46 @@ extracted_text = ""
 # Extract text
 # -------------------------
 if uploaded_file:
+
     if uploaded_file.type == "application/pdf":
         with pdfplumber.open(uploaded_file) as pdf:
             for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    extracted_text += page_text + "\n"
+                text = page.extract_text()
+                if text:
+                    extracted_text += text + "\n"
 
-    else:
-        image = Image.open(uploaded_file)
-        extracted_text = pytesseract.image_to_string(image)
+    elif uploaded_file.type.startswith("image"):
+        if is_streamlit_cloud():
+            st.error("❌ Image OCR is not supported on Streamlit Cloud. Please upload a PDF or run locally for image OCR.")
+            st.stop()
+        else:
+            image = Image.open(uploaded_file)
+            extracted_text = pytesseract.image_to_string(image)
 
 # -------------------------
 # Display extracted text
 # -------------------------
 if extracted_text.strip():
     st.subheader("📜 Extracted Text (Preview)")
-    st.text_area("Text from document", extracted_text, height=250)
+    st.text_area("Text from document", extracted_text[:4000], height=250)
 
 # -------------------------
 # Summarize
 # -------------------------
-summary_text = ""
+if "summary_text" not in st.session_state:
+    st.session_state.summary_text = ""
+
 if extracted_text.strip():
     if st.button("🧠 Summarize"):
         with st.spinner("Summarizing..."):
             prompt = f"Summarize the following content clearly:\n\n{extracted_text[:3000]}"
             result = summarizer(prompt, max_new_tokens=120)
-            summary_text = result[0]["generated_text"]
+            st.session_state.summary_text = result[0]["generated_text"].strip()
 
+    if st.session_state.summary_text:
         st.subheader("✅ Summary")
-        st.success(summary_text)
+        st.success(st.session_state.summary_text)
+
 
 # -------------------------
 # Ask Questions
