@@ -1,8 +1,7 @@
 streamlit
-pytesseract
 pdfplumber
-pillow
+pytesseract
+Pillow
 transformers
 torch
 sentencepiece
-spacy
