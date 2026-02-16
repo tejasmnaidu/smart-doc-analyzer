@@ -76,3 +76,4 @@ The model uses the document text as **context**, so different files produce diff
 ```bash
 git clone https://github.com/tejasmnaidu/smart-doc-analyzer.git
 cd smart-doc-analyzer
+
